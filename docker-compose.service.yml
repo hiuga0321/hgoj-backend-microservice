@@ -1,0 +1,71 @@
+version: '3'
+services:
+  hgoj-backend-gateway:
+    container_name: hgoj-backend-gateway
+    build:
+      context: ./hgoj-backend-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"    # 公网暴露 8080 端口
+    networks:
+      - mynetwork
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  hgoj-backend-user-service:
+    container_name: hgoj-backend-user-service
+    build:
+      context: ./hgoj-backend-user-service
+      dockerfile: Dockerfile
+    expose:
+      - "8080"       # 仅允许容器间访问，不映射到宿主机
+    networks:
+      - mynetwork
+    depends_on:
+      - hgoj-backend-gateway
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  hgoj-backend-question-service:
+    container_name: hgoj-backend-question-service
+    build:
+      context: ./hgoj-backend-question-service
+      dockerfile: Dockerfile
+    expose:
+      - "8080"       # 内部端口
+    networks:
+      - mynetwork
+    depends_on:
+      - hgoj-backend-user-service
+      - hgoj-backend-gateway
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  hgoj-backend-judge-service:
+    container_name: hgoj-backend-judge-service
+    build:
+      context: ./hgoj-backend-judge-service
+      dockerfile: Dockerfile
+    expose:
+      - "8080"      # 内部端口
+    networks:
+      - mynetwork
+    depends_on:
+      - hgoj-backend-user-service
+      - hgoj-backend-question-service
+      - hgoj-backend-gateway
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+
+# 自定义网络（确保服务间通过容器名互通）
+networks:
+  mynetwork:
+    driver: bridge
